@@ -1,6 +1,6 @@
 'use strict';
 const got = require('got');
-const tmi = require('tmi');
+const tmi = require('tmi.js');
 const mysql = require('mysql2/promise');
 const async = require('async');
 const fs = require('fs');
@@ -39,6 +39,9 @@ const logger = winston.createLogger({
         new winston.transports.Console({level: 'debug'})
     ],
 });
+
+let hasChatToken = false;
+let chatClient;
 
 let cfgfile = fs.readFileSync('hdnbot.cfg', 'utf8');
 let cfglines = cfgfile.matchAll(/(?<key>\w+)=(?<value>[^\r\n]+)/g);
@@ -81,15 +84,75 @@ async function readConfig() {
     for (let row of rows) {
         config[row.name] = row.value;
     }
-    logger.debug("Config Loaded:");
-    logger.debug(config);
+    if (config['chatToken'] === null) {
+        logger.warn("No Chat Token available yet, entering setup mode.");
+    } else {
+        hasChatToken = true;
+    }
 }
 
-async.series([connectToDB, readConfig]).catch((error) => {
+async function joinChat() {
+    if (hasChatToken) {
+        chatClient = new tmi.Client({
+            connection: {
+                secure: true,
+                reconnect: true
+            },
+            identity: {
+                username: config['userName'],
+                password: 'oauth:' + config['chatToken']
+            },
+            channels: [config['channelName']]
+        });
+    } else {
+        chatClient = new tmi.Client({
+            connection: {
+                secure: true,
+                reconnect: true
+            },
+            channels: [config['channelName']]
+        });
+    }
+    chatClient.on('connected', () => {
+        logger.info("Connected to Twitch Chat!");
+    });
+    await chatClient.connect();
+    chatClient.on('message', (channel, tags, message, self) => {
+        // Ignore echoed messages.
+        if (self || !hasChatToken) return;
+
+        if (message.startsWith('!')) {
+            handleCommands(channel, tags, message).then();
+        } else {
+            logger.info(`[chat][${channel}][${tags.username}] ${message}`);
+        }
+    });
+}
+
+let commands = {
+    'echo': echoCommand
+}
+
+async function handleCommands(channel, tags, message) {
+    let parts = message.split(" ");
+    let command = parts[0].substring(1);
+    let args = parts.slice(1);
+    if (commands.hasOwnProperty(command)) {
+        logger.info(`[command][${channel}][${tags.username}] ${message}`)
+        commands[command](channel, tags, args);
+    } else {
+        logger.info(`[unknown command][${channel}][${tags.username}] ${message}`);
+    }
+}
+
+async function echoCommand(channel, tags, args) {
+    chatClient.say(channel, args.join(' '));
+}
+
+async.series([connectToDB, readConfig, joinChat]).catch((error) => {
     logger.error("Unhandled top-level exception:");
     logger.error(error);
     process.exit(2);
 }).then(() => {
-    logger.info("All done!");
-    process.exit(0);
+    logger.info("Startup done!");
 });
