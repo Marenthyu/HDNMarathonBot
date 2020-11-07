@@ -1,0 +1,11 @@
+{
+  "name": "hdnmarathonbot",
+  "version": "1.0.0",
+  "dependencies": {
+    "async": "^3.2.0",
+    "got": "^11.8.0",
+    "mysql2": "^2.2.5",
+    "tmi": "^2.0.0",
+    "winston": "^3.3.3"
+  }
+}
