@@ -91,15 +91,15 @@ async function handleCommands(channel, tags, message) {
 }
 let commands = {};
 module.exports.reloadCommands = async function() {
-    let normalizedPath = path.join(__dirname, "commands");
+    let normalizedPath = path.join(__dirname, "chatbot", "commands");
     commands = {};
     fs.readdirSync(normalizedPath).forEach((file) => {
         let fileNoExt = file.split('.')[0];
         try {
-            let name = require.resolve("./commands/" + file);
+            let name = require.resolve("./chatbot/commands/" + file);
             delete require.cache[name];
         } finally {
-            commands[fileNoExt] = require("./commands/" + file);
+            commands[fileNoExt] = require("./chatbot/commands/" + file);
         }
 
     });

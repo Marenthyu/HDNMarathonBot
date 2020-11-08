@@ -104,3 +104,4 @@ dist
 .tern-port
 
 hdnbot.cfg
+modules/chatbot/announcements.json

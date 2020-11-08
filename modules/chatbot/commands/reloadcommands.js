@@ -1,5 +1,5 @@
 'use strict';
-let bot = require('../chatbot');
+let bot = require('../../chatbot');
 
 module.exports = async function() {
     try {
