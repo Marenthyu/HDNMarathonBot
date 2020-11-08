@@ -16,3 +16,8 @@ module.exports.setChatToken = async function (chatToken, chatRefreshToken) {
     await module.exports.db.execute('REPLACE INTO config(name, value) VALUES (\'chatToken\', ?), (\'chatRefreshToken\', ?)', [chatToken, chatRefreshToken]);
     logger.info("chatToken and chatRefreshToken updated!");
 }
+
+module.exports.setBroadcasterToken = async function (broadcasterToken, broadcasterRefreshToken) {
+    await module.exports.db.execute('REPLACE INTO config(name, value) VALUES (\'broadcasterToken\', ?), (\'broadcasterRefreshToken\', ?)', [broadcasterToken, broadcasterRefreshToken]);
+    logger.info("broadcasterToken and broadcasterRefreshToken updated!");
+}

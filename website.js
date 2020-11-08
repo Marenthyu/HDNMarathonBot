@@ -56,16 +56,13 @@ async function twitchCallback(req, res, q) {
         httpError(res, 400, 'Client Error', 'Error Authorizing with Twitch: ' + error_description + "\nError Code: " + error);
     } else if (!state || !code) {
         httpError(res, 400, 'Client Error', 'Missing required parameter. You shouldn\'t see this.');
-    } else if (state !== 'chatToken') {
-        httpError(res, 400, 'Client Error', 'Invalid state. You shouldn\'t see this.');
-    } else {
+    } else if (state === 'chatToken' || state === 'broadcasterToken') {
         res.writeHead(200, 'OK');
         res.end("Got your token, checking with Twitch and saving to Database. You may close this tab.");
         let token;
         let refresh_token;
         try {
             let myURL = new URL((config.config['http'] === 'true' ? 'http' : 'https') + '://' + req.headers.host + req.url)
-            logger.info(encodeURIComponent(myURL.origin + myURL.pathname));
             let response = await got({
                 method: 'POST', url: `https://id.twitch.tv/oauth2/token?client_id=${
                     encodeURIComponent(config.config['clientID'])}&client_secret=${
@@ -83,6 +80,7 @@ async function twitchCallback(req, res, q) {
             return
         }
         logger.info("Got token from Twitch - checking username for expected value...");
+        let isChatToken = state === 'chatToken';
         try {
             let userResponse = await got({
                 method: "GET",
@@ -97,7 +95,8 @@ async function twitchCallback(req, res, q) {
                 logger.error("Unexpected response length for user verification - not setting token.");
                 return
             }
-            if (userResponse.body.data[0].login !== config.config["userName"]) {
+            let nameToCompare = isChatToken ? config.config["userName"] : config.config["channelName"];
+            if (userResponse.body.data[0].login !== nameToCompare) {
                 logger.error("Username of token did not match acquired token - not setting token");
                 return
             }
@@ -108,18 +107,26 @@ async function twitchCallback(req, res, q) {
             return
         }
         logger.info("New Token verified - updating database...");
-        await database.setChatToken(token, refresh_token);
+        if (isChatToken) {
+            await database.setChatToken(token, refresh_token)
+        } else {
+            await database.setBroadcasterToken(token, refresh_token);
+        }
+
         let hadChatToken = config.config['hasChatToken'];
         await config.refreshConfigFromDB();
         if (hadChatToken) {
-            logger.info("Note: the updated chatToken will only take effect upon re-login, but will be used for requests already.");
+            if (isChatToken) {
+                logger.info("Note: the updated chatToken will only take effect upon re-login, but will be used for requests already.");
+            }
         } else {
             await chatbot.joinChat();
         }
+    } else {
+        httpError(res, 400, 'Client Error', 'Invalid state. You shouldn\'t see this.');
     }
 
 }
-
 
 function defaultWebsiteEndpoint(req, res) {
     httpError(res, 404, 'Not Found');
