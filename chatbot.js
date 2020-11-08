@@ -1,6 +1,8 @@
 'use strict';
 
 const tmi = require('tmi.js');
+const path = require('path');
+const fs = require('fs');
 
 let logger = require('./logger');
 let config = require('./config');
@@ -80,17 +82,32 @@ async function handleCommands(channel, tags, message) {
     let args = parts.slice(1);
     if (commands.hasOwnProperty(command)) {
         logger.info(`[command][${channel}][${tags.username}] ${message}`)
-        commands[command](channel, tags, args);
+        let reply = await commands[command](args, tags, channel);
+        chatClient.say(channel, reply);
+        logger.info(`[command Reply][${channel}][${config.config['userName']}] ${reply}`)
     } else {
         logger.info(`[unknown command][${channel}][${tags.username}] ${message}`);
     }
 }
+let commands = {};
+module.exports.reloadCommands = async function() {
+    let normalizedPath = path.join(__dirname, "commands");
+    commands = {};
+    fs.readdirSync(normalizedPath).forEach((file) => {
+        let fileNoExt = file.split('.')[0];
+        try {
+            let name = require.resolve("./commands/" + file);
+            delete require.cache[name];
+        } finally {
+            commands[fileNoExt] = require("./commands/" + file);
+        }
 
-
-let commands = {
-    'echo': echoCommand
+    });
 }
 
-async function echoCommand(channel, tags, args) {
-    chatClient.say(channel, args.join(' '));
-}
+module.exports.reloadCommands().then(() => {
+    logger.info("Commands loaded");
+}).catch((e) => {
+    logger.error("Error loading commands");
+    logger.error(e);
+});
