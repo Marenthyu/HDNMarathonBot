@@ -6,6 +6,6 @@ module.exports = async function() {
         await bot.reloadCommands();
         return "Commands Reloaded!";
     } catch {
-        return "Error reloading commands";
+        return "Error reloading Commands";
     }
 }

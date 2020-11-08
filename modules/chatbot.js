@@ -89,8 +89,9 @@ async function handleCommands(channel, tags, message) {
         logger.info(`[unknown command][${channel}][${tags.username}] ${message}`);
     }
 }
+
 let commands = {};
-module.exports.reloadCommands = async function() {
+module.exports.reloadCommands = async function () {
     let normalizedPath = path.join(__dirname, "chatbot", "commands");
     commands = {};
     fs.readdirSync(normalizedPath).forEach((file) => {
@@ -105,9 +106,41 @@ module.exports.reloadCommands = async function() {
     });
 }
 
+let announcements = [];
+let activeAnnouncements = [];
+module.exports.reloadAnnouncements = async function () {
+    let content = fs.readFileSync(path.join(__dirname, "chatbot", "announcements.json")).toString("utf-8");
+    announcements = JSON.parse(content);
+    logger.info("New Announcements:");
+    logger.info(announcements);
+    for (let a of activeAnnouncements) {
+        clearInterval(a);
+    }
+    activeAnnouncements = [];
+    for (let announcement of announcements) {
+        activeAnnouncements.push(setInterval(async () => {
+            try {
+                chatClient.say('#' + config.config['channelName'], announcement.message);
+                logger.info(`[announcement][${'#' + config.config['channelName']}][${config.config['userName']}] ${announcement.message}`)
+            } catch {
+                logger.warning("Swallowing error sending Announcement.");
+            }
+        }, announcement.interval * 1000));
+    }
+}
+
+// Initialization
+
 module.exports.reloadCommands().then(() => {
     logger.info("Commands loaded");
 }).catch((e) => {
     logger.error("Error loading commands");
+    logger.error(e);
+});
+
+module.exports.reloadAnnouncements().then(() => {
+    logger.info("Announcements loaded");
+}).catch((e) => {
+    logger.error("Error loading Announcements");
     logger.error(e);
 });
