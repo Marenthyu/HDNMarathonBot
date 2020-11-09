@@ -78,7 +78,7 @@ module.exports.joinChat = async function () {
 
 async function handleCommands(channel, tags, message) {
     let parts = message.split(" ");
-    let command = parts[0].substring(1);
+    let command = parts[0].substring(1).toLowerCase();
     let args = parts.slice(1);
     if (commands.hasOwnProperty(command)) {
         logger.info(`[command][${channel}][${tags.username}] ${message}`)
