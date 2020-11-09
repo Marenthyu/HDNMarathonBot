@@ -21,3 +21,8 @@ module.exports.setBroadcasterToken = async function (broadcasterToken, broadcast
     await module.exports.db.execute('REPLACE INTO config(name, value) VALUES (\'broadcasterToken\', ?), (\'broadcasterRefreshToken\', ?)', [broadcasterToken, broadcasterRefreshToken]);
     logger.info("broadcasterToken and broadcasterRefreshToken updated!");
 }
+
+module.exports.isAdmin = async function (userID) {
+    let [rows] = await module.exports.db.execute('SELECT * FROM admins WHERE id = ?', [userID]);
+    return rows.length === 1;
+}

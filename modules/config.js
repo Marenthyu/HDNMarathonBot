@@ -11,11 +11,13 @@ module.exports.refreshConfigFromDB = async function () {
     for (let row of rows) {
         module.exports.config[row.name] = row.value;
     }
-    if (module.exports.config['chatToken'] === null || module.exports.config['chatToken'] === undefined) {
+    if (module.exports.config['chatToken'] === null || module.exports.config['chatToken'] === undefined || !module.exports.config['chatToken']) {
         logger.warn("No Chat Token available yet, entering setup mode.");
+        module.exports.config['hasChatToken'] = false;
     } else {
         module.exports.config['hasChatToken'] = true;
     }
+    logger.info("Config reloaded from Database.");
 }
 
 let cfgfile = fs.readFileSync('hdnbot.cfg', 'utf8');

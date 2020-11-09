@@ -83,7 +83,7 @@ async function handleCommands(channel, tags, message) {
     if (commands.hasOwnProperty(command)) {
         logger.info(`[command][${channel}][${tags.username}] ${message}`)
         let reply = await commands[command](args, tags, channel);
-        chatClient.say(channel, reply);
+        chatClient.say(channel, reply.toString());
         logger.info(`[command Reply][${channel}][${config.config['userName']}] ${reply}`)
     } else {
         logger.info(`[unknown command][${channel}][${tags.username}] ${message}`);

@@ -20,7 +20,7 @@ module.exports = winston.createLogger({
             format: 'YYYY-MM-DD HH:mm:ss.SSS'
         }),
         winston.format.printf(info => `[${info.timestamp}][${info.service}][${
-            pad('     ', info.level)}] ${
+            pad('       ', info.level)}] ${
             typeof info.message === 'string' ? info.message : util.inspect(info.message)
         }`)
     ),
