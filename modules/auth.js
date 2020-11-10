@@ -30,7 +30,7 @@ module.exports.refreshBroadcasterToken = async function () {
         method: 'POST', url: `https://id.twitch.tv/oauth2/token?client_id=${
             encodeURIComponent(config.config['clientID'])}&client_secret=${
             encodeURIComponent(config.config['clientSecret'])}&refresh_token=${
-            encodeURIComponent(config.config['chatRefreshToken'])}&grant_type=refresh_token`,
+            encodeURIComponent(config.config['broadcasterRefreshToken'])}&grant_type=refresh_token`,
         responseType: "json"
     }).catch((e) => {
         logger.error("Error refreshing token:");
@@ -75,6 +75,7 @@ module.exports.checkTokenValidity = async function() {
             }
         }
     } catch (e) {
+        config.config['hasChatToken'] = false;
         if (!e.hasOwnProperty('response')) {
             logger.error("Got no response trying to check chatToken Validity.");
             logger.error(e);
@@ -83,7 +84,6 @@ module.exports.checkTokenValidity = async function() {
             logger.error(e.response.body);
             await module.exports.refreshChatToken();
         }
-        config.config['hasChatToken'] = false;
     }
     try {
         if (!config.config['broadcasterRefreshToken']) {
@@ -122,6 +122,7 @@ module.exports.checkTokenValidity = async function() {
             }
         }
     } catch (e) {
+        config.config['hasBroadcasterToken'] = false;
         if (!e.hasOwnProperty('response')) {
             logger.error("Got no response trying to check broadcasterToken Validity. Can't refresh.");
             logger.error(e);
@@ -130,7 +131,6 @@ module.exports.checkTokenValidity = async function() {
             logger.error(e.response.body);
             await module.exports.refreshBroadcasterToken();
         }
-        config.config['hasBroadcasterToken'] = false;
     }
     logger.info("Token verification procedure complete.");
 }
