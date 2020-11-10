@@ -17,6 +17,12 @@ module.exports.refreshConfigFromDB = async function () {
     } else {
         module.exports.config['hasChatToken'] = true;
     }
+    if (module.exports.config['broadcasterToken'] === null || module.exports.config['broadcasterToken'] === undefined || !module.exports.config['broadcasterToken']) {
+        logger.warn("No Broadcaster Token available yet, entering setup mode.");
+        module.exports.config['hasBroadcasterToken'] = false;
+    } else {
+        module.exports.config['hasBroadcasterToken'] = true;
+    }
     logger.info("Config reloaded from Database.");
 }
 
