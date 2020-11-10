@@ -2,6 +2,7 @@
 let config = require('./config');
 let logger = require('./logger');
 let mysql = require('mysql2/promise');
+let api = require('./twitchapi');
 
 module.exports.connectToDB = async function () {
     logger.info("Connecting to database...")
@@ -25,4 +26,31 @@ module.exports.setBroadcasterToken = async function (broadcasterToken, broadcast
 module.exports.isAdmin = async function (userID) {
     let [rows] = await module.exports.db.execute('SELECT * FROM admins WHERE id = ?', [userID]);
     return rows.length === 1;
+}
+
+module.exports.addPoints = async function (userID, points) {
+    try {
+        let [result] = await module.exports.db.execute('UPDATE users SET points = points + ? WHERE id = ?', [points, userID]);
+        if (result.affectedRows === 0) {
+            logger.error("Rows were not 1 for updating user points! Creating user...");
+            // noinspection ExceptionCaughtLocallyJS
+            throw new Error("Only affected 0 users");
+        }
+        return result.affectedRows === 1;
+    } catch {
+        logger.info("Had to fall back to create user...");
+        try {
+            await module.exports.addUser(userID, (await api.getUserInfo(userID, true))['login']);
+            let [result] = await module.exports.db.execute('UPDATE users SET points = points + ? WHERE id = ?', [points, userID]);
+            return result.affectedRows === 1;
+        } catch {
+            logger.error("Error adding points to user, even after trying to create it!");
+            return false;
+        }
+    }
+}
+
+module.exports.addUser = async function (userID, name) {
+    let [rows] = await module.exports.db.execute('REPLACE INTO `users` (`id`, `name`) VALUES (?, ?)', [userID, name]);
+    return rows;
 }
