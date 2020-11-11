@@ -66,7 +66,7 @@ async function twitchCallback(req, res, q) {
         let token;
         let refresh_token;
         try {
-            let myURL = new URL((config.config['http'] === 'true' ? 'http' : 'https') + '://' + req.headers.host + req.url)
+            let myURL = new URL((config.config['http'] === 'true' ? 'http' : 'https') + '://' + (req.headers['x-forwarded-host'] ? req.headers['x-forwarded-host'] : req.headers['host']) + req.url)
             let response = await got({
                 method: 'POST', url: `https://id.twitch.tv/oauth2/token?client_id=${
                     encodeURIComponent(config.config['clientID'])}&client_secret=${
