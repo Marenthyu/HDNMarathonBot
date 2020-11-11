@@ -9,6 +9,8 @@ let config = require('./config');
 let database = require('./database');
 let chatbot = require('./chatbot');
 
+const httpstring = config['http'] ? 'http://' : 'https://';
+
 module.exports.startWebsite = function () {
     logger.info("Website listening on port " + config.config['websiteport'] + "...");
     http.createServer(((req, res) => {
@@ -44,7 +46,9 @@ function httpError(res, code, reason, body, headers) {
 }
 
 const websiteEndpoints = {
-    'twitchcallback': twitchCallback
+    'twitchcallback': twitchCallback,
+    'chatlogin': chatlogin,
+    'broadcasterlogin': broadcasterlogin
 }
 
 async function twitchCallback(req, res, q) {
@@ -126,6 +130,16 @@ async function twitchCallback(req, res, q) {
         httpError(res, 400, 'Client Error', 'Invalid state. You shouldn\'t see this.');
     }
 
+}
+
+async function chatlogin(req, res) {
+    let redirectURI = `${httpstring}${req.headers['x-forwarded-host'] ? req.headers['x-forwarded-host'] : req.headers['host']}/twitchcallback`;
+    httpError(res, 302, 'Redirect', 'You should get redirected.', {'Location': `https://id.twitch.tv/oauth2/authorize?client_id=${config.config['clientID']}&redirect_uri=${redirectURI}&response_type=code&scope=chat:read%20chat:edit%20whispers:read%20whispers:edit&state=chatToken`});
+}
+
+async function broadcasterlogin(req, res) {
+    let redirectURI = `${httpstring}${req.headers['x-forwarded-host'] ? req.headers['x-forwarded-host'] : req.headers['host']}/twitchcallback`;
+    httpError(res, 302, 'Redirect', 'You should get redirected.', {'Location': `https://id.twitch.tv/oauth2/authorize?client_id=${config.config['clientID']}&redirect_uri=${redirectURI}&response_type=code&scope=channel%3Aread%3Aredemptions&state=broadcasterToken`});
 }
 
 function defaultWebsiteEndpoint(req, res) {
