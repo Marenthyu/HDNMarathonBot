@@ -5,6 +5,8 @@ let database = require('./database');
 let config = require('./config');
 let logger = require('./logger');
 
+let nextChatRefresh, nextBroadcasterRefresh;
+
 module.exports.refreshChatToken = async function () {
     logger.info("Refreshing chat token...");
     let response = await got({
@@ -20,7 +22,8 @@ module.exports.refreshChatToken = async function () {
     });
     let token = response.body.access_token;
     let refresh_token = response.body.refresh_token;
-    await database.setChatToken(token, refresh_token);
+    let expires_in = response.body.expires_in;
+    await module.exports.setChatToken(token, refresh_token, expires_in);
     return config.refreshConfigFromDB()
 }
 
@@ -39,7 +42,8 @@ module.exports.refreshBroadcasterToken = async function () {
     });
     let token = response.body.access_token;
     let refresh_token = response.body.refresh_token;
-    await database.setBroadcasterToken(token, refresh_token);
+    let expires_in = response.body.expires_in;
+    await module.exports.setBroadcasterToken(token, refresh_token, expires_in);
     return config.refreshConfigFromDB()
 }
 
@@ -133,4 +137,42 @@ module.exports.checkTokenValidity = async function() {
         }
     }
     logger.info("Token verification procedure complete.");
+}
+
+module.exports.setChatToken = async function (chatToken, chatRefreshToken, expires_in) {
+    addTokenExpirationTimeout(expires_in, "chat");
+    return database.setChatToken(chatToken, chatRefreshToken);
+}
+
+module.exports.setBroadcasterToken = async function (broadcasterToken, broadcasterRefreshToken, expires_in) {
+    addTokenExpirationTimeout(expires_in, "broadcaster");
+    return database.setBroadcasterToken(broadcasterToken, broadcasterRefreshToken);
+}
+
+
+function addTokenExpirationTimeout(expires_in, type) {
+    try {
+        if (type === "chat") {
+            clearTimeout(nextChatRefresh);
+        } else if (type === "broadcaster") {
+            clearTimeout(nextBroadcasterRefresh);
+        }
+    } catch {
+    }
+    if (type === "chat") {
+        nextChatRefresh = setTimeout(() => {
+            module.exports.refreshBroadcasterToken().then().catch((err) => {
+                logger.error("[AUTH REFRESH] Error auto-refreshing chat token! Entering unstable app state, be aware...");
+                logger.error(err);
+            });
+        }, expires_in * 999);
+    } else if (type === "broadcaster") {
+        nextBroadcasterRefresh = setTimeout(() => {
+            module.exports.refreshBroadcasterToken().then().catch((err) => {
+                logger.error("[AUTH REFRESH] Error auto-refreshing broadcaster token! Entering unstable app state, be aware...");
+                logger.error(err);
+            });
+        }, expires_in * 999);
+    }
+
 }

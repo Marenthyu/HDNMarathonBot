@@ -6,8 +6,8 @@ const got = require('got');
 
 let logger = require('./logger');
 let config = require('./config');
-let database = require('./database');
 let chatbot = require('./chatbot');
+let auth = require("./auth");
 
 const httpstring = config['http'] ? 'http://' : 'https://';
 
@@ -65,6 +65,7 @@ async function twitchCallback(req, res, q) {
         res.end("Got your token, checking with Twitch and saving to Database. You may close this tab.");
         let token;
         let refresh_token;
+        let expires_in;
         try {
             let myURL = new URL((config.config['http'] === 'true' ? 'http' : 'https') + '://' + (req.headers['x-forwarded-host'] ? req.headers['x-forwarded-host'] : req.headers['host']) + req.url)
             let response = await got({
@@ -77,6 +78,7 @@ async function twitchCallback(req, res, q) {
             });
             token = response.body.access_token;
             refresh_token = response.body.refresh_token;
+            expires_in = response.body.expires_in;
         } catch (e) {
             logger.error("Error getting token from twitch:");
             logger.error(e);
@@ -112,9 +114,9 @@ async function twitchCallback(req, res, q) {
         }
         logger.info("New Token verified - updating database...");
         if (isChatToken) {
-            await database.setChatToken(token, refresh_token)
+            await auth.setChatToken(token, refresh_token, expires_in)
         } else {
-            await database.setBroadcasterToken(token, refresh_token);
+            await auth.setBroadcasterToken(token, refresh_token, expires_in);
         }
 
         let hadChatToken = config.config['hasChatToken'];
