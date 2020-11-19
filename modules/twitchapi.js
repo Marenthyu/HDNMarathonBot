@@ -10,21 +10,39 @@ async function doRequest(method, endpoint, body, TOKEN_TYPE, queryParams, expect
     const params = new URLSearchParams(queryParams);
     hasToken(TOKEN_TYPE);
     let endpointURL = `https://api.twitch.tv/helix/${endpoint}?${params.toString()}`;
-    let response = await got({
-        method: method, url: endpointURL,
-        headers: {
-            "Client-ID": config.config['clientID'],
-            "Authorization": `Bearer ${config.config[TOKEN_TYPE.toLowerCase() + 'Token']}`
-        },
-        responseType: "json",
-        json: body
-    }).catch((e) => {
-        logger.error("Error on request:");
-        logger.error(e.response.body);
-        logger.error("Used URL:");
-        logger.error(endpointURL);
-        throw e;
-    });
+    let response;
+    if (method === 'GET' || body === null) {
+        response = await got({
+            method: method, url: endpointURL,
+            headers: {
+                "Client-ID": config.config['clientID'],
+                "Authorization": `Bearer ${config.config[TOKEN_TYPE.toLowerCase() + 'Token']}`
+            },
+            responseType: "json"
+        }).catch((e) => {
+            logger.error("Error on request:");
+            logger.error(e.response ? e.response.body : e);
+            logger.error("Used URL:");
+            logger.error(endpointURL);
+            throw e;
+        });
+    } else {
+        response = await got({
+            method: method, url: endpointURL,
+            headers: {
+                "Client-ID": config.config['clientID'],
+                "Authorization": `Bearer ${config.config[TOKEN_TYPE.toLowerCase() + 'Token']}`
+            },
+            responseType: "json",
+            json: body
+        }).catch((e) => {
+            logger.error("Error on request:");
+            logger.error(e.response ? e.response.body : e);
+            logger.error("Used URL:");
+            logger.error(endpointURL);
+            throw e;
+        });
+    }
     if (expectedBodyDataLength && response.body.data.length !== expectedBodyDataLength) {
         logger.error("Invalid data length returned for request to " + endpoint + " - returning default object");
         logger.error("Returned body: ");
