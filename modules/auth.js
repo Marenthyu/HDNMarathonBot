@@ -47,7 +47,7 @@ module.exports.refreshBroadcasterToken = async function () {
     return config.refreshConfigFromDB()
 }
 
-module.exports.checkTokenValidity = async function() {
+module.exports.checkTokenValidity = async function () {
     try {
         if (!config.config['chatRefreshToken']) {
             logger.error("No chat refresh Token available! Expecting tokenless mode.");
@@ -158,6 +158,11 @@ function addTokenExpirationTimeout(expires_in, type) {
             clearTimeout(nextBroadcasterRefresh);
         }
     } catch {
+    }
+    // If old client ID, may still be expiring NEVER! Thus, skip automated refresh handler. (!expires_in resolves if it
+    // is 0 or unset
+    if (!expires_in) {
+        return
     }
     if (type === "chat") {
         nextChatRefresh = setTimeout(() => {
