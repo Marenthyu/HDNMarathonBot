@@ -4,7 +4,6 @@ const ws = require('websocket');
 let logger = require('./logger');
 let config = require('./config');
 let api = require('./twitchapi');
-let db = require('./database');
 
 const TWITCH_PUBSUB_URL = "wss://pubsub-edge.twitch.tv";
 
@@ -75,14 +74,6 @@ module.exports.restart = async function () {
                             redemption.user['display_name']} redeemed ${
                             redemption.reward.title} for ${
                             redemption.reward.cost} points!`);
-                        db.addPoints(redemption.user['id'], redemption.reward.cost).then((result)=> {
-                            if (!result) {
-                                logger.error("Error awarding points for the above rdemption");
-                            }
-                        }).catch((e) => {
-                            logger.error("Error awarding points for the above rdemption:");
-                            logger.error(e);
-                        });
                     } else {
                         logger.info("[pubsub][message] Unparsed Topic Response: " + JSON.stringify(data));
                     }

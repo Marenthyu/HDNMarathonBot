@@ -28,11 +28,11 @@ module.exports.isAdmin = async function (userID) {
     return rows.length === 1;
 }
 
-module.exports.addPoints = async function (userID, points) {
+module.exports.addFreeVotes = async function (userID, votes) {
     try {
-        let [result] = await module.exports.db.execute('UPDATE users SET points = points + ? WHERE id = ?', [points, userID]);
+        let [result] = await module.exports.db.execute('UPDATE users SET votes = votes + ? WHERE id = ?', [votes, userID]);
         if (result.affectedRows === 0) {
-            logger.error("Rows were not 1 for updating user points! Creating user...");
+            logger.error("Rows were not 1 for updating user votes! Creating user...");
             // noinspection ExceptionCaughtLocallyJS
             throw new Error("Only affected 0 users");
         }
@@ -41,12 +41,30 @@ module.exports.addPoints = async function (userID, points) {
         logger.info("Had to fall back to create user...");
         try {
             await module.exports.addUser(userID, (await api.getUserInfo(userID, true))['login']);
-            let [result] = await module.exports.db.execute('UPDATE users SET points = points + ? WHERE id = ?', [points, userID]);
+            let [result] = await module.exports.db.execute('UPDATE users SET votes = votes + ? WHERE id = ?', [votes, userID]);
             return result.affectedRows === 1;
         } catch {
-            logger.error("Error adding points to user, even after trying to create it!");
+            logger.error("Error adding votes to user, even after trying to create it!");
             return false;
         }
+    }
+}
+
+module.exports.getFreeVotes = async function (userID) {
+    let [rows] = await module.exports.db.execute('SELECT votes FROM users WHERE id = ?', [userID]);
+    try {
+        return rows[0].votes;
+    } catch {
+        return 0;
+    }
+}
+
+module.exports.getTopFreeVotes = async function (limit) {
+    let [rows] = await module.exports.db.execute('SELECT * FROM users ORDER BY votes DESC LIMIT ?', [limit.toString()]);
+    try {
+        return rows;
+    } catch {
+        return [];
     }
 }
 
