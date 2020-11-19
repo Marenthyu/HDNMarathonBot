@@ -6,6 +6,10 @@ let config = require('./config');
 const MAIN_TOKEN_TYPE = 'Chat';
 const BC_TOKEN_TYPE = 'Broadcaster';
 
+async function getBCID() {
+    return (await module.exports.getUserInfo(config.config['channelName'])).id;
+}
+
 async function doRequest(method, endpoint, body, TOKEN_TYPE, queryParams, expectedBodyDataLength, defaultObject) {
     const params = new URLSearchParams(queryParams);
     hasToken(TOKEN_TYPE);
@@ -89,7 +93,7 @@ module.exports.getGameInfoExact = async function (name) {
 
 module.exports.setStreamTitle = async function (title) {
     return doRequest('PATCH', 'channels', {title: title}, BC_TOKEN_TYPE,
-        {broadcaster_id: (await module.exports.getUserInfo(config.config['channelName'])).id});
+        {broadcaster_id: await getBCID()});
 }
 
 module.exports.setStreamGame = async function (gameName) {
@@ -98,7 +102,7 @@ module.exports.setStreamGame = async function (gameName) {
         throw new Error("Invalid Game Name Specified!");
     }
     return doRequest('PATCH', 'channels', {game_id: gameID}, BC_TOKEN_TYPE,
-        {broadcaster_id: (await module.exports.getUserInfo(config.config['channelName'])).id});
+        {broadcaster_id: await getBCID()});
 }
 
 module.exports.setStreamBoth = async function (title, gameName) {
@@ -107,13 +111,16 @@ module.exports.setStreamBoth = async function (title, gameName) {
         throw new Error("Invalid Game Name Specified!");
     }
     return doRequest('PATCH', 'channels', {game_id: gameID, title: title}, BC_TOKEN_TYPE,
-        {broadcaster_id: (await module.exports.getUserInfo(config.config['channelName'])).id});
+        {broadcaster_id: await getBCID()});
 }
 
 module.exports.createReward = async function (reward) {
-    hasToken(BC_TOKEN_TYPE);
     return doRequest('POST', 'channel_points/custom_rewards', reward, BC_TOKEN_TYPE,
-        {broadcaster_id: (await module.exports.getUserInfo(config.config['channelName'])).id},
+        {broadcaster_id: await getBCID()},
         1, {"id": "0", "title": "An Unknown Reward."});
 }
 
+module.exports.getAllRewards = async function() {
+    return (await doRequest('GET', 'channel_points/custom_rewards', null, BC_TOKEN_TYPE,
+    {broadcaster_id: await getBCID(), only_manageable_rewards: true})).data;
+}

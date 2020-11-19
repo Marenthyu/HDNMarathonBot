@@ -105,6 +105,7 @@ module.exports.checkTokenValidity = async function () {
             let hasEditScope = false;
             let hasChatEditScope = false;
             let hasChatReadScope = false;
+            let hasRedemptionEditScope = false;
             for (let scope of response.body.scopes) {
                 if (scope === "user:edit:broadcast") {
                     hasEditScope = true;
@@ -114,9 +115,11 @@ module.exports.checkTokenValidity = async function () {
                     hasChatEditScope = true;
                 } else if (scope === "chat:read") {
                     hasChatReadScope = true;
+                } else if (scope === "channel:manage:redemptions") {
+                    hasRedemptionEditScope = true;
                 }
             }
-            if (hasRedemptionScope && hasEditScope && hasChatEditScope && hasChatReadScope) {
+            if (hasRedemptionScope && hasEditScope && hasChatEditScope && hasChatReadScope && hasRedemptionEditScope) {
                 config.config['hasBroadcasterToken'] = true;
             } else {
                 logger.error("Required scopes not on Broadcaster token. Expecting tokenless mode.");
