@@ -12,7 +12,7 @@ let auth = require("./auth");
 const httpstring = config['http'] ? 'http://' : 'https://';
 
 module.exports.startWebsite = function () {
-    logger.info("Website listening on port " + config.config['websiteport'] + "...");
+    logger.info("[website] Website listening on port " + config.config['websiteport'] + "...");
     http.createServer(((req, res) => {
         let q = url.parse(req.url, true);
         if (websiteEndpoints.hasOwnProperty(q.pathname.substring(1))) {
@@ -80,12 +80,12 @@ async function twitchCallback(req, res, q) {
             refresh_token = response.body.refresh_token;
             expires_in = response.body.expires_in;
         } catch (e) {
-            logger.error("Error getting token from twitch:");
+            logger.error("[website] Error getting token from twitch:");
             logger.error(e);
             logger.error(e.response.body);
             return
         }
-        logger.info("Got token from Twitch - checking username for expected value...");
+        logger.info("[website] Got token from Twitch - checking username for expected value...");
         let isChatToken = state === 'chatToken';
         try {
             let userResponse = await got({
@@ -98,21 +98,21 @@ async function twitchCallback(req, res, q) {
                 }
             });
             if (userResponse.body.data.length !== 1) {
-                logger.error("Unexpected response length for user verification - not setting token.");
+                logger.error("[website] Unexpected response length for user verification - not setting token.");
                 return
             }
             let nameToCompare = isChatToken ? config.config["userName"] : config.config["channelName"];
             if (userResponse.body.data[0].login !== nameToCompare) {
-                logger.error("Username of token did not match acquired token - not setting token");
+                logger.error("[website] Username of token did not match acquired token - not setting token");
                 return
             }
         } catch (e) {
-            logger.error("Error verifying user from token on twitch:");
+            logger.error("[website] Error verifying user from token on twitch:");
             logger.error(e);
             logger.error(e.response.body);
             return
         }
-        logger.info("New Token verified - updating database...");
+        logger.info("[website] New Token verified - updating database...");
         if (isChatToken) {
             await auth.setChatToken(token, refresh_token, expires_in)
         } else {
@@ -123,7 +123,7 @@ async function twitchCallback(req, res, q) {
         await config.refreshConfigFromDB();
         if (hadChatToken) {
             if (isChatToken) {
-                logger.info("Note: the updated chatToken will only take effect upon re-login, but will be used for requests already.");
+                logger.info("[website] Note: the updated chatToken will only take effect upon re-login, but will be used for requests already.");
             }
         } else {
             await chatbot.joinChat();
