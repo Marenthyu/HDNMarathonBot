@@ -71,6 +71,7 @@ module.exports.checkTokenValidity = async function () {
             }
             if (hasChatReadScope && hasEditScope) {
                 config.config['hasChatToken'] = true;
+                addTokenExpirationTimeout(response.body.expires_in, 'chat');
             } else {
                 logger.error("Required scopes not on Chat token. Expecting tokenless mode.");
                 config.config['hasChatToken'] = false;
@@ -121,6 +122,7 @@ module.exports.checkTokenValidity = async function () {
             }
             if (hasRedemptionScope && hasEditScope && hasChatEditScope && hasChatReadScope && hasRedemptionEditScope) {
                 config.config['hasBroadcasterToken'] = true;
+                addTokenExpirationTimeout(response.body.expires_in, 'broadcaster');
             } else {
                 logger.error("Required scopes not on Broadcaster token. Expecting tokenless mode.");
                 config.config['hasBroadcasterToken'] = false;
