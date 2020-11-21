@@ -144,3 +144,8 @@ module.exports.reloadAnnouncements().then(() => {
     logger.error("Error loading Announcements");
     logger.error(e);
 });
+
+module.exports.tell = async function(message) {
+    chatClient.say('#' + config.config['channelName'], message);
+    logger.info(`[command Reply][#${config.config['channelName']}][${config.config['userName']}] ${message}`);
+}

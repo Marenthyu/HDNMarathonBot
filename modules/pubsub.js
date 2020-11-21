@@ -10,6 +10,29 @@ const TWITCH_PUBSUB_URL = "wss://pubsub-edge.twitch.tv";
 let client;
 let connection;
 let pingTimeout;
+let listeners = {};
+
+module.exports.addChannelPointsListener = async function(rewardid, uniqueid, callback) {
+    if (!listeners.hasOwnProperty(rewardid)) {
+        listeners[rewardid] = [];
+    }
+    let index = -1;
+    let found = false;
+    for (let listener of listeners[rewardid]) {
+        index++;
+        if (listener.id === uniqueid) {
+            found = true;
+            break;
+        }
+    }
+    if (found) {
+        listeners[rewardid][index] = {id: uniqueid, callback};
+        logger.info("[pubsub][channelpoints] Listener " + uniqueid + " replaced with new registration.");
+    } else {
+        listeners[rewardid].push({id: uniqueid, callback: callback});
+        logger.info("[pubsub][channelpoints] Listener " + uniqueid + " registered.");
+    }
+}
 
 module.exports.restart = async function () {
     if (!config.config['hasBroadcasterToken']) {
@@ -74,6 +97,14 @@ module.exports.restart = async function () {
                             redemption.user['display_name']} redeemed ${
                             redemption.reward.title} for ${
                             redemption.reward.cost} points!`);
+                        if (listeners.hasOwnProperty(redemption.reward.id)) {
+                            for (let listener of listeners[redemption.reward.id]) {
+                                listener.callback(redemption).then().catch((e) => {
+                                    logger.error("Error handling listener:");
+                                    logger.error(e);
+                                });
+                            }
+                        }
                     } else {
                         logger.info("[pubsub][message] Unparsed Topic Response: " + JSON.stringify(data));
                     }

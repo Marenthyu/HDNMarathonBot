@@ -8,9 +8,10 @@ let website = require('./modules/website');
 let chatbot = require('./modules/chatbot');
 let auth = require('./modules/auth');
 let pubsub = require('./modules/pubsub');
+let incentives = require('./modules/incentives');
 
 async.series([database.connectToDB, config.refreshConfigFromDB, auth.checkTokenValidity, chatbot.joinChat,
-    pubsub.restart, website.startWebsite]).catch((error) => {
+    pubsub.restart, incentives.initialize, website.startWebsite]).catch((error) => {
     logger.error("Unhandled top-level exception:");
     logger.error(error);
     process.exit(2);

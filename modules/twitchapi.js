@@ -120,7 +120,34 @@ module.exports.createReward = async function (reward) {
         1, {"id": "0", "title": "An Unknown Reward."});
 }
 
+module.exports.deleteReward = async function (rewardID) {
+    return doRequest('DELETE', 'channel_points/custom_rewards', null, BC_TOKEN_TYPE,
+        {broadcaster_id: await getBCID(), id: rewardID});
+}
+
+
 module.exports.getAllRewards = async function() {
     return (await doRequest('GET', 'channel_points/custom_rewards', null, BC_TOKEN_TYPE,
     {broadcaster_id: await getBCID(), only_manageable_rewards: true})).data;
+}
+
+module.exports.updateReward = async function(rewardID, newParams) {
+    return doRequest('PATCH', 'channel_points/custom_rewards', newParams, BC_TOKEN_TYPE,
+        {broadcaster_id: await getBCID(), id: rewardID}, 1, null);
+}
+
+module.exports.disableReward = async function(rewardID) {
+    return module.exports.updateReward(rewardID, {is_enabled: false});
+}
+
+module.exports.enableReward = async function(rewardID) {
+    return module.exports.updateReward(rewardID, {is_enabled: true});
+}
+
+module.exports.pauseReward = async function(rewardID) {
+    return module.exports.updateReward(rewardID, {is_paused: true});
+}
+
+module.exports.resumeReward = async function(rewardID) {
+    return module.exports.updateReward(rewardID, {is_paused: false});
 }
