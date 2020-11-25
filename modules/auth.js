@@ -171,7 +171,7 @@ function addTokenExpirationTimeout(expires_in, type) {
     }
     if (type === "chat") {
         nextChatRefresh = setTimeout(() => {
-            module.exports.refreshBroadcasterToken().then().catch((err) => {
+            module.exports.refreshChatToken().then().catch((err) => {
                 logger.error("[AUTH REFRESH] Error auto-refreshing chat token! Entering unstable app state, be aware...");
                 logger.error(err);
             });
