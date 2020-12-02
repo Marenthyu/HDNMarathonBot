@@ -151,3 +151,111 @@ module.exports.deleteIncentive = async function (databaseID) {
         return false
     }
 }
+
+module.exports.createChoice = async function (name, description, hasOpenEntry) {
+    return module.exports.db.execute('INSERT INTO `choices` (`name`, `description`, `hasOpenEntry`) VALUES (?, ?, ?)', [name, description, hasOpenEntry ? 1 : 0]);
+}
+
+module.exports.getAllChoices = async function () {
+    let [rows] = await module.exports.db.execute('SELECT * FROM choices');
+    let retObject = [];
+    for (let row of rows) {
+        let [optionsRows] = await module.exports.db.execute('SELECT * FROM choice_options WHERE choiceID = ?', [row.id]);
+        row['options'] = optionsRows;
+        retObject.push(row);
+    }
+    return retObject;
+}
+
+module.exports.getChoiceByRewardID = async function (rewardID) {
+    let [rows] = await module.exports.db.execute('SELECT * FROM choices WHERE rewardID = ?', [rewardID]);
+    if (rows.length !== 1) {
+        return false
+    } else {
+        return rows[0];
+    }
+}
+
+module.exports.setOptionRewardID = async function (id, rewardID) {
+    try {
+        let [result] = await module.exports.db.execute('UPDATE choice_options SET rewardID = ? WHERE id = ?', [rewardID, id]);
+        return result.affectedRows === 1;
+    } catch (e) {
+        logger.error(e);
+        return false
+    }
+}
+
+module.exports.setChoiceRewardID = async function (id, rewardID) {
+    try {
+        let [result] = await module.exports.db.execute('UPDATE choices SET rewardID = ? WHERE id = ?', [rewardID, id]);
+        return result.affectedRows === 1;
+    } catch (e) {
+        logger.error(e);
+        return false
+    }
+}
+
+/***
+ * Add votes to a free entry option
+ * @param rewardID The reward ID of the Choice that was redeemed
+ * @param votes The number of votes to add to the option
+ * @param user_input The "name" of the option to add/increase/vote for or create
+ * @returns {Promise<boolean|number>} Returns false on error,
+ * returns number of affected rows on success - 1 row means new option added, 2 means option updated.
+ */
+module.exports.addVotesToFreeEntry = async function (rewardID, votes, user_input) {
+    let choice = await module.exports.getChoiceByRewardID(rewardID);
+    try {
+        let [result] = await module.exports.db.execute('INSERT INTO `choice_options`(`choiceID`, `name`, `votes`) VALUES (?, ?, 1) ON DUPLICATE KEY UPDATE `votes` = `votes` + ?', [choice.id, user_input, votes]);
+        return result.affectedRows;
+    } catch (e) {
+        logger.error(e);
+        return false
+    }
+}
+
+module.exports.addVotesToOption = async function (rewardID, votes) {
+    try {
+        let [result] = await module.exports.db.execute('UPDATE choice_options SET votes = votes + ? WHERE rewardID = ?', [votes, rewardID]);
+        return result.affectedRows === 1;
+    } catch (e) {
+        logger.error(e);
+        return false
+    }
+}
+
+module.exports.getChoiceByDatabaseID = async function (id) {
+    let [rows] = await module.exports.db.execute('SELECT * FROM choices WHERE id = ?', [id]);
+    if (rows.length !== 1) {
+        logger.error("[database] Found not exactly 1 Choice for id " + id);
+        return null
+    } else {
+        return rows[0]
+    }
+}
+
+module.exports.getOptionsByDatabaseChoiceID = async function (databaseChoiceID) {
+    let [rows] = await module.exports.db.execute('SELECT * FROM choice_options WHERE choiceID = ?', [databaseChoiceID]);
+    return rows
+}
+
+module.exports.setChoiceClosed = async function (id, closed) {
+    try {
+        let [result] = await module.exports.db.execute('UPDATE choices SET isClosed = ? WHERE id = ?', [closed, id]);
+        return result.affectedRows === 1;
+    } catch (e) {
+        logger.error(e);
+        return false
+    }
+}
+
+module.exports.deleteChoice = async function (databaseID) {
+    try {
+        let [rows] = await module.exports.db.execute('DELETE FROM choices WHERE id = ?', [databaseID]);
+        return rows.affectedRows === 1;
+    } catch (e) {
+        logger.error(e);
+        return false
+    }
+}

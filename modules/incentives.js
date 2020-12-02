@@ -34,6 +34,7 @@ module.exports.resyncRewards = async function () {
                     'should_redemptions_skip_request_queue': true
                 });
             await db.setIncentiveRewardID(incentive.id, newReward.id);
+            incentive.rewardID = newReward.id;
             logger.info("[incentives] Created Reward " + newReward.id + " for incentive " + incentive.name);
         } else {
             if (incentive.currentVotes >= incentive.maxVotes || incentive.isClosed) {
