@@ -30,7 +30,7 @@ module.exports.resyncRewards = async function () {
                     let newReward = await api.createReward(
                         {
                             'title': choice.name + ' - ' + option.name,
-                            'prompt': 'Vote for "' + option.description + '" in the ' + choice.name + ' choice - ID: ' + option.id,
+                            'prompt': 'Vote for "' + option.name + '" in the ' + choice.name + ' choice - ID: ' + option.id,
                             'cost': 100,
                             'is_disabled': choice.isClosed === 1,
                             'should_redemptions_skip_request_queue': true
