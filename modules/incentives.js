@@ -99,3 +99,7 @@ module.exports.deleteIncentive = async function(databaseID) {
     await api.deleteReward(rewardID);
     return db.deleteIncentive(databaseID);
 }
+
+module.exports.getAllIncentives = async function() {
+    return db.getAllIncentives();
+}

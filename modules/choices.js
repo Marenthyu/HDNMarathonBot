@@ -154,3 +154,7 @@ module.exports.deleteChoice = async function (databaseID) {
     }
     return db.deleteChoice(databaseID);
 }
+
+module.exports.getAllChoices = async function() {
+    return db.getAllChoices();
+}

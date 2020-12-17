@@ -8,6 +8,8 @@ let logger = require('./logger');
 let config = require('./config');
 let chatbot = require('./chatbot');
 let auth = require("./auth");
+let choices = require('./choices');
+let incentives = require('./incentives');
 
 const httpstring = config['http'] ? 'http://' : 'https://';
 
@@ -48,7 +50,8 @@ function httpError(res, code, reason, body, headers) {
 const websiteEndpoints = {
     'twitchcallback': twitchCallback,
     'chatlogin': chatlogin,
-    'broadcasterlogin': broadcasterlogin
+    'broadcasterlogin': broadcasterlogin,
+    'tracker': tracker
 }
 
 async function twitchCallback(req, res, q) {
@@ -146,4 +149,27 @@ async function broadcasterlogin(req, res) {
 
 function defaultWebsiteEndpoint(req, res) {
     httpError(res, 404, 'Not Found');
+}
+
+async function tracker(req, res) {
+    let currentChoices = await choices.getAllChoices();
+    let currentIncentives = await incentives.getAllIncentives();
+
+    let retString = "The Lazy Tracker™:\nINCENTIVES:\n";
+
+    for (let incentive of currentIncentives) {
+        retString += "[" + incentive.id + "] " + incentive.name + " - " + incentive.description + ": " + incentive.currentVotes + "/" + incentive.maxVotes + (incentive.isClosed ? " (CLOSED)\n" : "\n");
+    }
+
+    retString += "\nCHOICES:\n";
+
+    for (let choice of currentChoices) {
+        retString += "[" + choice.id + "] " + choice.name + " - " + choice.description + ":" + (choice.hasOpenEntry ? " (OPEN ENTRY!)\n" : "\n");
+        for (let option of choice.options) {
+            retString += "\t" + option.name + " (" + option.votes + ")\n";
+        }
+    }
+
+    res.writeHead(200, "OK", {"Content-Type": "text/plain;charset=utf-8"});
+    res.end(retString);
 }
