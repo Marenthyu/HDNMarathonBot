@@ -231,6 +231,7 @@ module.exports.getChoiceByDatabaseID = async function (id) {
         logger.error("[database] Found not exactly 1 Choice for id " + id);
         return null
     } else {
+        rows[0].options = await module.exports.getOptionsByDatabaseChoiceID(id);
         return rows[0]
     }
 }
@@ -238,6 +239,16 @@ module.exports.getChoiceByDatabaseID = async function (id) {
 module.exports.getOptionsByDatabaseChoiceID = async function (databaseChoiceID) {
     let [rows] = await module.exports.db.execute('SELECT * FROM choice_options WHERE choiceID = ?', [databaseChoiceID]);
     return rows
+}
+
+module.exports.addOptionToChoice = async function (databaseChoiceID, optionName) {
+    try {
+        let [result] = await module.exports.db.execute('INSERT INTO `choice_options`(`choiceID`, `name`) VALUES (?, ?)', [databaseChoiceID, optionName]);
+        return result.affectedRows;
+    } catch (e) {
+        logger.error(e);
+        return false
+    }
 }
 
 module.exports.setChoiceClosed = async function (id, closed) {

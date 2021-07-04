@@ -107,6 +107,7 @@ module.exports.checkTokenValidity = async function () {
             let hasChatEditScope = false;
             let hasChatReadScope = false;
             let hasRedemptionEditScope = false;
+            let hasScheduleManageScope = false;
             for (let scope of response.body.scopes) {
                 if (scope === "user:edit:broadcast") {
                     hasEditScope = true;
@@ -118,9 +119,11 @@ module.exports.checkTokenValidity = async function () {
                     hasChatReadScope = true;
                 } else if (scope === "channel:manage:redemptions") {
                     hasRedemptionEditScope = true;
+                } else if (scope === "channel:manage:schedule") {
+                    hasScheduleManageScope = true;
                 }
             }
-            if (hasRedemptionScope && hasEditScope && hasChatEditScope && hasChatReadScope && hasRedemptionEditScope) {
+            if (hasRedemptionScope && hasEditScope && hasChatEditScope && hasChatReadScope && hasRedemptionEditScope && hasScheduleManageScope) {
                 config.config['hasBroadcasterToken'] = true;
                 addTokenExpirationTimeout(response.body.expires_in, 'broadcaster');
             } else {

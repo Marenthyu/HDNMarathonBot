@@ -103,6 +103,12 @@ module.exports.createChoice = async function (name, description, hasOpenEntry) {
     }
 }
 
+module.exports.addOptionsToChoice = async function(choiceID, options) {
+    for (const option of options) {
+        await db.addOptionToChoice(choiceID, option)
+    }
+}
+
 async function voteRedemptionHandler(redemption) {
     let isFreeEntry = redemption.reward.is_user_input_required;
     let success;
