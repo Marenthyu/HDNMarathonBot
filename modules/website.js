@@ -3,6 +3,7 @@
 const http = require('http');
 const url = require('url');
 const got = require('got');
+const fs = require("fs");
 
 let logger = require('./logger');
 let config = require('./config');
@@ -10,6 +11,9 @@ let chatbot = require('./chatbot');
 let auth = require("./auth");
 let choices = require('./choices');
 let incentives = require('./incentives');
+
+const trackertemplate = fs.readFileSync('modules/html/tracker.html', 'utf-8');
+
 
 const httpstring = config['http'] ? 'http://' : 'https://';
 
@@ -155,21 +159,28 @@ async function tracker(req, res) {
     let currentChoices = await choices.getAllChoices();
     let currentIncentives = await incentives.getAllIncentives();
 
-    let retString = "The Lazy Tracker™:\nINCENTIVES:\n";
+    let retString = "<h1>The Slightly Less Lazy Tracker™</h1><br><div><h2>INCENTIVES:</h2><br>";
 
     for (let incentive of currentIncentives) {
-        retString += "[" + incentive.id + "] " + incentive.name + " - " + incentive.description + ": " + incentive.currentVotes + "/" + incentive.maxVotes + (incentive.isClosed ? " (CLOSED)\n" : "\n");
+        retString += "<div class=\"p-3 border bg-light incentive\"><div class=\"badge rounded-pill bg-primary\">ID " + incentive.id + "</div> " + incentive.name + " - " + incentive.description + ": <div class=\"badge bg-" + (incentive.currentVotes<incentive.maxVotes?"warning":"success") + "\">" + incentive.currentVotes + "/" + incentive.maxVotes + "</div>" + (incentive.isClosed ? " <div class=\"badge bg-danger\">CLOSED</div><br>" : "<br>");
+        retString += "</div>"
     }
 
-    retString += "\nCHOICES:\n";
+    retString += "</div><div><br><h2>CHOICES:</h2><br>";
 
     for (let choice of currentChoices) {
-        retString += "[" + choice.id + "] " + choice.name + " - " + choice.description + ":" + (choice.hasOpenEntry ? " (OPEN ENTRY!)\n" : "\n");
+        retString += "<div class=\"p-3 border bg-light choice\"><div class=\"badge rounded-pill bg-primary\">ID " + choice.id + "</div> " + choice.name + " - " + choice.description + " " + (choice.hasOpenEntry ? " <div class=\"badge bg-success\">OPEN ENTRY</div>" : "") + (choice.isClosed ? " <div class=\"badge bg-danger\">CLOSED</div><br>" : "<br>");
+        retString += "<div class=\"row\">";
+        let first = true;
         for (let option of choice.options) {
-            retString += "\t" + option.name + " (" + option.votes + ")\n";
+            retString += "<div class=\"m-2 p-2 border light choice\">" + option.name + " <div class=\"badge bg-" + (first?"success":"warning") + "\">" + option.votes + "</div></div>";
+            first = false;
         }
+        retString += "</div></div>";
     }
 
-    res.writeHead(200, "OK", {"Content-Type": "text/plain;charset=utf-8"});
-    res.end(retString);
+    retString += "</div>"
+
+    res.writeHead(200, "OK", {"Content-Type": "text/html;charset=utf-8"});
+    res.end(trackertemplate.replace("{{body}}", retString));
 }

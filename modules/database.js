@@ -160,7 +160,7 @@ module.exports.getAllChoices = async function () {
     let [rows] = await module.exports.db.execute('SELECT * FROM choices');
     let retObject = [];
     for (let row of rows) {
-        let [optionsRows] = await module.exports.db.execute('SELECT * FROM choice_options WHERE choiceID = ?', [row.id]);
+        let [optionsRows] = await module.exports.db.execute('SELECT * FROM choice_options WHERE choiceID = ? ORDER BY votes DESC', [row.id]);
         row['options'] = optionsRows;
         retObject.push(row);
     }
