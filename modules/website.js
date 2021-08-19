@@ -11,6 +11,7 @@ let chatbot = require('./chatbot');
 let auth = require("./auth");
 let choices = require('./choices');
 let incentives = require('./incentives');
+let db = require('./database');
 
 const trackertemplate = fs.readFileSync('modules/html/tracker.html', 'utf-8');
 
@@ -155,32 +156,71 @@ function defaultWebsiteEndpoint(req, res) {
     httpError(res, 404, 'Not Found');
 }
 
-async function tracker(req, res) {
+async function tracker(req, res, query) {
     let currentChoices = await choices.getAllChoices();
     let currentIncentives = await incentives.getAllIncentives();
-
-    let retString = "<h1>The Slightly Less Lazy Tracker™</h1><br><div><h2>INCENTIVES:</h2><br>";
-
-    for (let incentive of currentIncentives) {
-        retString += "<div class=\"p-3 border bg-light incentive\"><div class=\"badge rounded-pill bg-primary\">ID " + incentive.id + "</div> " + incentive.name + " - " + incentive.description + ": <div class=\"badge bg-" + (incentive.currentVotes<incentive.maxVotes?"warning":"success") + "\">" + incentive.currentVotes + "/" + incentive.maxVotes + "</div>" + (incentive.isClosed ? " <div class=\"badge bg-danger\">CLOSED</div><br>" : "<br>");
-        retString += "</div>"
-    }
-
-    retString += "</div><div><br><h2>CHOICES:</h2><br>";
-
-    for (let choice of currentChoices) {
-        retString += "<div class=\"p-3 border bg-light choice\"><div class=\"badge rounded-pill bg-primary\">ID " + choice.id + "</div> " + choice.name + " - " + choice.description + " " + (choice.hasOpenEntry ? " <div class=\"badge bg-success\">OPEN ENTRY</div>" : "") + (choice.isClosed ? " <div class=\"badge bg-danger\">CLOSED</div><br>" : "<br>");
-        retString += "<div class=\"row\">";
-        let first = true;
-        for (let option of choice.options) {
-            retString += "<div class=\"m-2 p-2 border light choice\">" + option.name + " <div class=\"badge bg-" + (first?"success":"warning") + "\">" + option.votes + "</div></div>";
-            first = false;
+    if (query.query.type === "tracker") {
+        // Dabom's Java Tracker
+        let wars = [];
+        for (let choice of currentChoices) {
+            let parsedOptions = [];
+            for (let option of choice.options) {
+                parsedOptions.push({
+                    choice: option.name,
+                    amount: option.votes
+                });
+            }
+            wars.push({
+                id: choice.id,
+                title: choice.name,
+                description: choice.description,
+                status: choice.isClosed ? "closed" : "open",
+                openEntry: choice.hasOpenEntry,
+                choices: parsedOptions
+            });
         }
-        retString += "</div></div>";
+        let incentives = [];
+        for (let incentive of currentIncentives) {
+            incentives.push({
+               id: incentive.id,
+               title: incentive.name,
+               status: incentive.isClosed ? "closed" : "open",
+               amount: incentive.currentVotes,
+               required: incentive.maxVotes
+            });
+        }
+        let cpuwar = await db.getCPUWar();
+        let cpus = [];
+        for (let cpu of cpuwar) {
+            cpus.push({cpu: cpu.name, votes: cpu.votes});
+        }
+        res.writeHead(200, "OK", {"Content-Type": "application/json;charset=utf-8"});
+        res.end(JSON.stringify({wars: wars, incentives: incentives, cpuwar: cpus}));
+    } else {
+        let retString = "<h1>The Slightly Less Lazy Tracker™</h1><br><div><h2>INCENTIVES:</h2><br>";
+
+        for (let incentive of currentIncentives) {
+            retString += "<div class=\"p-3 border bg-light incentive\"><div class=\"badge rounded-pill bg-primary\">ID " + incentive.id + "</div> " + incentive.name + " - " + incentive.description + ": <div class=\"badge bg-" + (incentive.currentVotes < incentive.maxVotes ? "warning" : "success") + "\">" + incentive.currentVotes + "/" + incentive.maxVotes + "</div>" + (incentive.isClosed ? " <div class=\"badge bg-danger\">CLOSED</div><br>" : "<br>");
+            retString += "</div>"
+        }
+
+        retString += "</div><div><br><h2>CHOICES:</h2><br>";
+
+        for (let choice of currentChoices) {
+            retString += "<div class=\"p-3 border bg-light choice\"><div class=\"badge rounded-pill bg-primary\">ID " + choice.id + "</div> " + choice.name + " - " + choice.description + " " + (choice.hasOpenEntry ? " <div class=\"badge bg-success\">OPEN ENTRY</div>" : "") + (choice.isClosed ? " <div class=\"badge bg-danger\">CLOSED</div><br>" : "<br>");
+            retString += "<div class=\"row\">";
+            let first = true;
+            for (let option of choice.options) {
+                retString += "<div class=\"m-2 p-2 border light choice\">" + option.name + " <div class=\"badge bg-" + (first ? "success" : "warning") + "\">" + option.votes + "</div></div>";
+                first = false;
+            }
+            retString += "</div></div>";
+        }
+
+        retString += "</div>"
+
+        res.writeHead(200, "OK", {"Content-Type": "text/html;charset=utf-8"});
+        res.end(trackertemplate.replace("{{body}}", retString));
     }
 
-    retString += "</div>"
-
-    res.writeHead(200, "OK", {"Content-Type": "text/html;charset=utf-8"});
-    res.end(trackertemplate.replace("{{body}}", retString));
 }

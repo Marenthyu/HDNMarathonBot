@@ -270,3 +270,18 @@ module.exports.deleteChoice = async function (databaseID) {
         return false
     }
 }
+
+module.exports.addToCPUWar = async function(cpu) {
+    try {
+        let [rows] = await module.exports.db.execute('UPDATE cpuwar SET votes = votes + 1 WHERE name = ?', [cpu]);
+        return rows.affectedRows === 1;
+    } catch (e) {
+        logger.error(e);
+        return false
+    }
+}
+
+module.exports.getCPUWar = async function() {
+    let [result] = await module.exports.db.execute('SELECT * FROM cpuwar');
+    return result;
+}
