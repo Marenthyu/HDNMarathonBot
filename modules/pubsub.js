@@ -4,6 +4,7 @@ const ws = require('websocket');
 let logger = require('./logger');
 let config = require('./config');
 let api = require('./twitchapi');
+const db = require("./database");
 
 const TWITCH_PUBSUB_URL = "wss://pubsub-edge.twitch.tv";
 
@@ -97,6 +98,7 @@ module.exports.restart = async function () {
                             redemption.user['display_name']} redeemed ${
                             redemption.reward.title} for ${
                             redemption.reward.cost} points!`);
+                        db.addGiveawayEntries(redemption.user['id'], 1).then();
                         if (listeners.hasOwnProperty(redemption.reward.id)) {
                             for (let listener of listeners[redemption.reward.id]) {
                                 listener.callback(redemption).then().catch((e) => {

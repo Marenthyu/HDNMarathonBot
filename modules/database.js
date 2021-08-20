@@ -285,3 +285,25 @@ module.exports.getCPUWar = async function() {
     let [result] = await module.exports.db.execute('SELECT * FROM cpuwar');
     return result;
 }
+
+module.exports.addGiveawayEntries = async function (userID, entries) {
+    try {
+        let [result] = await module.exports.db.execute('UPDATE users SET redemptions = redemptions + ? WHERE id = ?', [entries, userID]);
+        if (result.affectedRows === 0) {
+            logger.error("[database] Rows were not 1 for updating user entries! Creating user...");
+            // noinspection ExceptionCaughtLocallyJS
+            throw new Error("Only affected 0 users");
+        }
+        return result.affectedRows === 1;
+    } catch {
+        logger.info("Had to fall back to create user...");
+        try {
+            await module.exports.addUser(userID, (await api.getUserInfo(userID, true))['login']);
+            let [result] = await module.exports.db.execute('UPDATE users SET redemptions = redemptions + ? WHERE id = ?', [entries, userID]);
+            return result.affectedRows === 1;
+        } catch {
+            logger.error("[database] Error adding votes to user, even after trying to create it!");
+            return false;
+        }
+    }
+}

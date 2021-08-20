@@ -1,5 +1,5 @@
 'use strict';
 
 module.exports = async function(args) {
-    return
+    return "https://horaro.org/hdnmarathon/rebirth2"
 }
