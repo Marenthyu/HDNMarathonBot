@@ -182,11 +182,11 @@ async function tracker(req, res, query) {
         let incentives = [];
         for (let incentive of currentIncentives) {
             incentives.push({
-               id: incentive.id,
-               title: incentive.name,
-               status: incentive.isClosed ? "closed" : "open",
-               amount: incentive.currentVotes,
-               required: incentive.maxVotes
+                id: incentive.id,
+                title: incentive.name,
+                status: incentive.isClosed ? "closed" : "open",
+                amount: incentive.currentVotes,
+                required: incentive.maxVotes
             });
         }
         let cpuwar = await db.getCPUWar();
@@ -211,7 +211,7 @@ async function tracker(req, res, query) {
             retString += "<div class=\"row\">";
             let first = true;
             for (let option of choice.options) {
-                retString += "<div class=\"m-2 p-2 border light choice\">" + option.name + " <div class=\"badge bg-" + (first ? "success" : "warning") + "\">" + option.votes + "</div></div>";
+                retString += "<div class=\"m-2 p-2 border light choice\">" + option.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;') + " <div class=\"badge bg-" + (first ? "success" : "warning") + "\">" + option.votes + "</div></div>";
                 first = false;
             }
             retString += "</div></div>";
