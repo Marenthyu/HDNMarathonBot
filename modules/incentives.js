@@ -60,6 +60,10 @@ module.exports.createIncentive = async function (name, description) {
     return newReward
 }
 
+module.exports.setMaxVotes = async function (id, maxVotes) {
+    return await db.setTargetForIncentive(id, maxVotes);
+}
+
 async function voteRedemptionHandler(redemption) {
     let success = await db.addVotesToIncentive(redemption.reward.id, 1);
     if (!success) {

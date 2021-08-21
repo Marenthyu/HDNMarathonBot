@@ -142,6 +142,17 @@ module.exports.setIncentiveClosed = async function (id, closed) {
     }
 }
 
+module.exports.setTargetForIncentive = async function (id, target) {
+        try {
+            let [result] = await module.exports.db.execute('UPDATE incentives SET maxVotes = ? WHERE id = ?', [target, id]);
+            return result.affectedRows === 1;
+        } catch (e) {
+            logger.error(e);
+            return false
+        }
+
+}
+
 module.exports.deleteIncentive = async function (databaseID) {
     try {
         let [rows] = await module.exports.db.execute('DELETE FROM incentives WHERE id = ?', [databaseID]);

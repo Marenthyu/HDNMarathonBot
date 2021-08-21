@@ -5,7 +5,7 @@ let incentives = require('../../incentives');
 module.exports = async function (args, tags) {
     if (args.length === 0) {
         if (await db.isAdmin(tags['user-id'], true)) {
-            return "Available Admin commands: create, close, delete"
+            return "Available Admin commands: create, close, delete, target"
         }
         return "For incentives, check the Channel Points Menu! Use their IDs to find out more: !incentives info ID"
     } else {
@@ -46,6 +46,18 @@ module.exports = async function (args, tags) {
                     return "Please specify exactly 1 ID."
                 } else {
                     return await deleteIncentive(args[1]);
+                }
+            }
+
+            case "target": {
+                if (!await db.isAdmin(tags['user-id'], true)) {
+                    return "Admin-Only Command.";
+                }
+                if (args.length !== 3) {
+                    return "Please specify exactly 1 ID and the target votes you want to set it to."
+                } else {
+                    await incentives.setMaxVotes(args[1], args[2]);
+                    return "Done."
                 }
             }
         }
